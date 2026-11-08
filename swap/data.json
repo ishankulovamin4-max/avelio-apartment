@@ -1,0 +1,297 @@
+{
+ "_": "Рейки на картинках комнат: слоты, варианты, слои по глубине, таблички. Собирает swap/layers/page_data.py build.",
+ "slots": {
+  "sofa": {
+   "next": "Следующий диван",
+   "pick": "Выберите диван",
+   "options": [
+    {
+     "code": "PL-028",
+     "name": "Трёхместный диван",
+     "size": "218 × 90 × 78 см",
+     "photo": "swap/photo/PL-028.jpg"
+    },
+    {
+     "code": "PL-045",
+     "name": "Трёхместный диван",
+     "size": "242 × 102 × 76 см",
+     "photo": "swap/photo/PL-045.jpg"
+    },
+    {
+     "code": "PL-022",
+     "name": "Трёхместный диван",
+     "size": "220 × 85 × 69 см",
+     "photo": "swap/photo/PL-022.jpg"
+    }
+   ]
+  },
+  "dining": {
+   "next": "Следующий стол",
+   "pick": "Выберите обеденный стол",
+   "options": [
+    {
+     "code": "PD-066",
+     "name": "Обеденный стол",
+     "size": "160 × 90 × 75 см",
+     "photo": "swap/photo/PD-066.jpg"
+    },
+    {
+     "code": "PD-020",
+     "name": "Обеденный стол",
+     "size": "160 × 80 × 76 см",
+     "photo": "swap/photo/PD-020.jpg"
+    },
+    {
+     "code": "PD-029",
+     "name": "Обеденный стол",
+     "size": "150 × 90 × 76 см",
+     "photo": "swap/photo/PD-029.jpg"
+    }
+   ]
+  },
+  "chair": {
+   "next": "Следующие стулья",
+   "pick": "Выберите стулья",
+   "options": [
+    {
+     "code": "PD-105",
+     "name": "Обеденный стул",
+     "size": "57 × 60 × 83 см",
+     "photo": "swap/photo/PD-105.jpg"
+    },
+    {
+     "code": "PD-076",
+     "name": "Обеденный стул",
+     "size": "60 × 60 × 83 см",
+     "photo": "swap/photo/PD-076.jpg"
+    },
+    {
+     "code": "PD-081",
+     "name": "Обеденный стул",
+     "size": "62 × 56 × 76 см",
+     "photo": "swap/photo/PD-081.jpg"
+    },
+    {
+     "code": "PD-071",
+     "name": "Обеденный стул",
+     "size": "60 × 63 × 83 см",
+     "photo": "swap/photo/PD-071.jpg"
+    }
+   ]
+  },
+  "single": {
+   "next": "Следующая кровать",
+   "pick": "Выберите кровать",
+   "options": [
+    {
+     "code": "PB-080",
+     "name": "Кровать",
+     "size": "126 × 211 × 112 см",
+     "photo": "swap/photo/PB-080.jpg"
+    },
+    {
+     "code": "PB-015",
+     "name": "Кровать",
+     "size": "162 × 213 × 120 см",
+     "photo": "swap/photo/PB-015.jpg"
+    },
+    {
+     "code": "PB-149",
+     "name": "Кровать",
+     "size": "140 × 211 × 109 см",
+     "photo": "swap/photo/PB-149.jpg"
+    }
+   ]
+  },
+  "desk": {
+   "next": "Следующий стол",
+   "pick": "Выберите стол",
+   "options": [
+    {
+     "code": "PB-154",
+     "name": "Стол",
+     "size": "120 × 45 × 76 см",
+     "photo": "swap/photo/PB-154.jpg"
+    },
+    {
+     "code": "PB-152",
+     "name": "Письменный стол",
+     "size": "120 × 60 см",
+     "photo": "swap/photo/PB-152.jpg"
+    },
+    {
+     "code": "PB-172",
+     "name": "Стол",
+     "size": "120 × 43 × 76 см",
+     "photo": "swap/photo/PB-172.jpg"
+    }
+   ]
+  },
+  "deskchair": {
+   "next": "Следующее кресло",
+   "pick": "Выберите кресло",
+   "options": [
+    {
+     "code": "PB-317",
+     "name": "Кресло к письменному столу",
+     "size": "размер уточняется",
+     "photo": "swap/photo/PB-317.jpg"
+    },
+    {
+     "code": "PL-450",
+     "name": "Кресло к письменному столу",
+     "size": "76 × 73 × 122 см",
+     "photo": "swap/photo/PL-450.jpg"
+    },
+    {
+     "code": "PB-315",
+     "name": "Кресло к письменному столу",
+     "size": "84 × 95 × 130 см",
+     "photo": "swap/photo/PB-315.jpg"
+    }
+   ]
+  }
+ },
+ "views": {
+  "living_sofa": {
+   "layers": [
+    {
+     "id": "sofa",
+     "slot": "sofa",
+     "box": [
+      0.32227,
+      0.41992,
+      0.74154,
+      0.77637
+     ]
+    }
+   ],
+   "plates": {
+    "sofa": [
+     0.5488,
+     0.7611
+    ]
+   },
+   "groups": [
+    [
+     "sofa"
+    ]
+   ]
+  },
+  "dining_kitchen": {
+   "layers": [
+    {
+     "id": "chair.back",
+     "slot": "chair",
+     "box": [
+      0.10352,
+      0.41309,
+      0.6224,
+      1.0
+     ]
+    },
+    {
+     "id": "dining",
+     "slot": "dining",
+     "box": [
+      0.16927,
+      0.34473,
+      0.67773,
+      0.89844
+     ]
+    },
+    {
+     "id": "chair.front",
+     "slot": "chair",
+     "box": [
+      0.10091,
+      0.50098,
+      0.51758,
+      1.0
+     ]
+    }
+   ],
+   "plates": {
+    "dining": [
+     0.4088,
+     0.8809
+    ],
+    "chair": [
+     0.3625,
+     0.3917
+    ]
+   },
+   "groups": [
+    [
+     "chair",
+     "dining"
+    ]
+   ]
+  },
+  "room2_desk": {
+   "layers": [
+    {
+     "id": "desk",
+     "slot": "desk",
+     "box": [
+      0.16862,
+      0.40137,
+      0.57682,
+      1.0
+     ]
+    },
+    {
+     "id": "deskchair",
+     "slot": "deskchair",
+     "box": [
+      0.41276,
+      0.33301,
+      0.77604,
+      0.96191
+     ]
+    }
+   ],
+   "plates": {
+    "deskchair": [
+     0.5463,
+     0.8486
+    ],
+    "desk": [
+     0.38,
+     0.9109
+    ]
+   },
+   "groups": [
+    [
+     "desk",
+     "deskchair"
+    ]
+   ]
+  },
+  "room2_bed": {
+   "layers": [
+    {
+     "id": "single",
+     "slot": "single",
+     "box": [
+      0.29883,
+      0.2959,
+      0.72786,
+      0.99121
+     ]
+    }
+   ],
+   "plates": {
+    "single": [
+     0.48,
+     0.8996
+    ]
+   },
+   "groups": [
+    [
+     "single"
+    ]
+   ]
+  }
+ }
+}
