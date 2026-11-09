@@ -11,7 +11,7 @@
         || CSS.supports("-webkit-mask-image", "linear-gradient(#000,#000)");
     const rich = Boolean(CSS.registerProperty) && hasMask;
     const link = document.createElement("a");
-    const cssUrl = (path) => { link.href = path; return `url("${link.href}")`; };
+    const cssUrl = (path) => { link.href = imageSources.get(path) || path; return `url("${link.href}")`; };
     const pct = (v) => `${(v * 100).toFixed(2)}%`;
     const clamp = (v) => Math.max(0, Math.min(1, v));
     const slatCount = (w) => Math.max(12, Math.min(20, Math.round(w / 24)));
@@ -22,15 +22,39 @@
     const scenes = [];
     let openScene = null;
 
-    /* Загрузка. Куски по нажатию; силуэты и контуры лёгкие и нужны сразу. */
+    /* Загрузка с повторами. Готовые изображения используются и слоями, и CSS без нового сетевого запроса. */
     const cache = new Map();
+    const imageSources = new Map();
+    async function fetchImage(path) {
+        for (let attempt = 0; attempt < 3; attempt++) {
+            if (attempt) await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+            let missing = false;
+            let url = null;
+            try {
+                const response = await fetch(path, { cache: attempt ? "reload" : "default" });
+                if (!response.ok) {
+                    missing = response.status === 404;
+                    throw new Error(`HTTP ${response.status}: ${path}`);
+                }
+                url = URL.createObjectURL(await response.blob());
+                const img = new Image();
+                img.src = url;
+                await img.decode();
+                imageSources.set(path, url);
+                return img;
+            } catch (error) {
+                if (url) URL.revokeObjectURL(url);
+                if (missing || attempt === 2) throw error;
+            }
+        }
+    }
     function load(path) {
         if (!cache.has(path)) {
-            const img = new Image();
-            img.src = path;
-            const ready = img.decode().then(() => img);
-            ready.catch(() => cache.delete(path));
+            const ready = fetchImage(path);
             cache.set(path, ready);
+            ready.catch(() => {
+                if (cache.get(path) === ready) cache.delete(path);
+            });
         }
         return cache.get(path);
     }
@@ -41,13 +65,14 @@
             return img;
         });
     }
-    const assets = (t, code) => Promise.all([load(file(t, "piece", code)), shape(t, code), load(file(t, "line", code))]);
+    const assetLoads = (t, code) => [load(file(t, "piece", code)), shape(t, code), load(file(t, "line", code))];
     async function layerOf(t, code) {
+        const img = await load(file(t, "piece", code));
         const layer = new Image();
         layer.className = "swap-piece";
         layer.alt = "";
         layer.decoding = "sync";
-        layer.src = file(t, "piece", code);
+        layer.src = img.src;
         await layer.decode();
         return layer;
     }
@@ -204,7 +229,8 @@
     /* Группа пересекающихся вещей картинки: выбрано не по умолчанию хоть что-то — видны куски всех её слоёв. */
     const isDefault = (slot, code) => slots[slot].options[0].code === code;
     function baseSrc(sc) {
-        const src = sc.img.hasAttribute("data-swapped") || root.dataset.mode === "clean" ? sc.img.dataset.clean : sc.img.dataset.marked;
+        const path = sc.img.hasAttribute("data-swapped") || root.dataset.mode === "clean" ? sc.img.dataset.clean : sc.img.dataset.marked;
+        const src = imageSources.get(path) || path;
         if (sc.img.getAttribute("src") !== src) sc.img.setAttribute("src", src);
     }
     function activate(sc, group, tracks, layers) {
@@ -232,19 +258,69 @@
         baseSrc(sc);
     }
 
+    // Один набор зависимостей для нажатия и предзагрузки, включая подложку и пересекающиеся вещи.
+    function variantLoads(sc, slot, code) {
+        const group = sc.groupOf[slot];
+        const loads = [load(sc.img.dataset.clean)];
+        sc.bySlot[slot].forEach((t) => loads.push(...assetLoads(t, code), ...assetLoads(t, topCode(t))));
+        if (!group.active) {
+            group.slots.filter((s) => s !== slot).flatMap((s) => sc.bySlot[s])
+                .forEach((t) => loads.push(...assetLoads(t, topCode(t))));
+        }
+        return loads;
+    }
+
+    /* Фоновая очередь: один вариант за раз; новые задания ждут окончания загрузки по нажатию. */
+    const pendingSlots = new Set();
+    const preloadQueue = [];
+    const preloadKeys = new Set();
+    let preloading = false;
+    function queuePreload(sc, slot, code) {
+        const key = JSON.stringify([sc.view, slot, code]);
+        if (preloadKeys.has(key)) return;
+        preloadKeys.add(key);
+        preloadQueue.push({ sc, slot, code, key });
+        runPreloads();
+    }
+    async function runPreloads() {
+        if (preloading || pendingSlots.size) return;
+        preloading = true;
+        try {
+            while (preloadQueue.length && !pendingSlots.size) {
+                const { sc, slot, code, key } = preloadQueue.shift();
+                try {
+                    if (sc.near && (code === wanted[slot] || code === next(slot))) {
+                        // Ждём все файлы даже при ошибке одного, чтобы варианты не грузились параллельно.
+                        await Promise.allSettled(variantLoads(sc, slot, code));
+                    }
+                } catch { /* ошибка предзагрузки не меняет картинку и не показывает сообщение */ }
+                finally {
+                    preloadKeys.delete(key);
+                }
+            }
+        } finally {
+            preloading = false;
+        }
+    }
+    function preload(sc) {
+        if (!sc.near) return;
+        for (const slot of Object.keys(sc.bySlot)) {
+            queuePreload(sc, slot, wanted[slot]);
+            queuePreload(sc, slot, next(slot));
+        }
+    }
+
     async function change(sc, slot, code, how) {
         const group = sc.groupOf[slot];
         const own = sc.bySlot[slot];
         const others = group.slots.filter((s) => s !== slot).flatMap((s) => sc.bySlot[s]);
-        const loads = [load(sc.img.dataset.clean)];
-        own.forEach((t) => loads.push(assets(t, code), assets(t, topCode(t))));
-        if (!group.active) others.forEach((t) => loads.push(assets(t, topCode(t))));
-        await Promise.all(loads);
+        await Promise.all(variantLoads(sc, slot, code));
         const layers = await Promise.all(own.map((t) => layerOf(t, code)));
         const under = group.active ? [] : await Promise.all(others.map((t) => layerOf(t, topCode(t))));
         if (wanted[slot] !== code) return;
         if (!group.active) activate(sc, group, others, under);
         own.forEach((t, i) => { if (code !== topCode(t)) start(t, code, layers[i], how); });
+        preload(sc);
     }
 
     function showWait(sc, text) {
@@ -253,7 +329,9 @@
         sc.wait.hidden = !text;
     }
     async function pick(slot, code, how, from) {
-        if (code === wanted[slot]) return;
+        if (from.loading || pendingSlots.has(slot) || code === wanted[slot]) return;
+        from.loading = true;
+        pendingSlots.add(slot);
         wanted[slot] = code;
         paint(slot);
         for (const sc of scenes) {
@@ -265,19 +343,25 @@
         showWait(from, "");
         from.waitTimer = setTimeout(() => showWait(from, "Загружаю"), 150);
         try {
-            await change(from, slot, code, how);
-        } catch {
-            if (wanted[slot] !== code) return;
+            try {
+                await change(from, slot, code, how);
+            } catch {
+                if (wanted[slot] !== code) return;
+                clearTimeout(from.waitTimer);
+                wanted[slot] = topCode(from.bySlot[slot][0]);
+                paint(slot);
+                showWait(from, "Не загрузилось. Нажмите ещё раз.");
+                from.waitClear = setTimeout(() => showWait(from, ""), 4000);
+                return;
+            }
+            if (from.waitToken !== token) return;
             clearTimeout(from.waitTimer);
-            wanted[slot] = topCode(from.bySlot[slot][0]);
-            paint(slot);
-            showWait(from, "Не загрузилось. Нажмите ещё раз.");
-            from.waitClear = setTimeout(() => showWait(from, ""), 4000);
-            return;
+            showWait(from, "");
+        } finally {
+            from.loading = false;
+            pendingSlots.delete(slot);
+            runPreloads();
         }
-        if (from.waitToken !== token) return;
-        clearTimeout(from.waitTimer);
-        showWait(from, "");
     }
 
     /* Что выбрано: барабаны и счёт на всех табличках слота, контуры, список. */
@@ -406,16 +490,20 @@
         });
     }
 
-    /* Нажатия: каждое ставит следующий вариант и открывает список. */
+    /* Нажатия: следующий вариант и список; повтор во время загрузки не меняет выбор. */
     function hot(sc, slot) {
         sc.scene.toggleAttribute("data-hot", Boolean(slot));
         sc.tracks.forEach((t) => t.zone.toggleAttribute("data-hot", t.slot === slot));
     }
     function intent(slot) {
+        if (pendingSlots.has(slot)) return;
         const code = next(slot);
-        for (const sc of scenes) (sc.bySlot[slot] || []).forEach((t) => assets(t, code).catch(() => {}));
+        for (const sc of scenes) {
+            if (sc.near && sc.bySlot[slot]) queuePreload(sc, slot, code);
+        }
     }
     function press(sc, slot, x) {
+        if (sc.loading || pendingSlots.has(slot)) return;
         openPanel(sc, slot);
         pick(slot, next(slot), { x }, sc);
     }
@@ -568,6 +656,17 @@
             }
         }, { threshold: [0, .25, .5, .75, 1] });
         scenes.forEach((sc) => seen.observe(sc.scene));
+
+        // Отдельный наблюдатель не меняет долю видимости, используемую анимацией покоя.
+        const nearby = new IntersectionObserver((entries) => {
+            for (const e of entries) {
+                const sc = scenes.find((s) => s.scene === e.target);
+                if (!sc) continue;
+                sc.near = e.isIntersecting;
+                if (sc.near) preload(sc);
+            }
+        }, { rootMargin: "300px" });
+        scenes.forEach((sc) => nearby.observe(sc.scene));
 
         addEventListener("keydown", (event) => {
             if (event.key === "Escape" && openScene) closePanel(openScene, true);

@@ -1332,9 +1332,16 @@ html.v3d-locked body {
                 "Объёмная модель не открылась на этом устройстве. "
                 + "Всё то же видно на картинках ниже.";
         };
+        // Сеть до github.io рвётся: модуль пробуем ещё дважды, с паузой 1 и 2 с.
+        const load = (attempt = 0) =>
+            import(attempt ? `./viewer3d.js?retry=${attempt}` : "./viewer3d.js").catch((error) => {
+                if (attempt >= 2) throw error;
+                return new Promise((done) => setTimeout(done, 1000 * (attempt + 1)))
+                    .then(() => load(attempt + 1));
+            });
         const run = () => {
             box.dataset.state = "loading";
-            import("./viewer3d.js").then((module) => module.start(box)).catch(fail);
+            load().then((module) => module.start(box)).catch(fail);
         };
         const watcher = new IntersectionObserver((entries) => {
             if (!entries.some((entry) => entry.isIntersecting)) return;
