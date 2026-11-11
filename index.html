@@ -87,6 +87,19 @@ body {
     height: auto;
     object-fit: contain;
 }
+.mobile-note {
+    display: none;
+    min-width: 0;
+    max-width: 1000px;
+    padding: 12px 14px;
+    border: 1px solid var(--rule);
+    border-inline-start: 2px solid var(--gold);
+    border-radius: 5px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+}
 .introduction { display: grid; gap: 22px; max-width: 1000px; }
 .introduction h1 {
     font-size: clamp(30px, 4.2vw, 52px);
@@ -179,6 +192,7 @@ body {
 .product-code { color: var(--muted); font-size: 12px; }
 .product-size { font-size: 13px; }
 @media (max-width: 900px) {
+    .mobile-note { display: block; }
     .plan-layout { grid-template-columns: minmax(0, 1fr); gap: 22px; }
     .plan-key { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; }
     .products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1190,6 +1204,7 @@ html.v3d-locked body {
 }
 </style>
 <main class="apartment" lang="ru">
+<p class="mobile-note">Чтобы рассмотреть всё в деталях, лучше открыть страницу с компьютера. На телефоне включите «Версию для ПК» в меню браузера.</p>
 <header class="introduction"><h1>Мебель Avelio в квартире нашей клиентки</h1><p>На картинках комнат мебель Avelio обведена золотой линией и подписана, а номера на общем виде совпадают с номерами в плане расстановки и списке вещей. Для любой вещи можно посмотреть варианты замены из нашего каталога.</p><div class="toggle"><button type="button" data-mode="marked" aria-pressed="true">С подписями</button><button type="button" data-mode="clean" aria-pressed="false">Без подписей</button></div></header>
 <section class="block"><h2>Общий вид</h2><img src="img/iso.marked.jpg" alt="Общий вид" width="1600" height="1200" class="overview-image" data-marked="img/iso.marked.jpg" data-clean="img/iso.clean.jpg"></section>
 <section class="block v3d" data-state="idle" data-walls="low" data-view="outside">
